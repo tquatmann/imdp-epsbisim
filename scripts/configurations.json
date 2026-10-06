@@ -1,0 +1,97 @@
+{
+  "storm-mdp": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %mdp --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%mdp"
+    ],
+    "output-files": [],
+    "description": "The (non-interval) MDP. No bisimulation quotienting."
+  },
+  "storm-mdpbisim": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %mdp --bisimulation --bisimulation:tolerance 0 --bisimulation:exportquotient %name.mdpquot.tar.gz --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%mdp"
+    ],
+    "output-files": [
+      "%name.mdpquot.tar.gz"
+    ],
+    "description": "The (non-interval) MDP. Apply (exact) bisimulation quotienting."
+  },
+  "storm-imdp": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [],
+    "description": "The IMDP with learned interval probabilities. No bisimulation quotienting."
+  },
+  "storm-imdpbisim": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0 --bisimulation:exportquotient %name.imdpquot.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply (exact) bisimulation quotienting."
+  },
+  "storm-imdpapproxbisim1": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0.01 --bisimulation:exportquotient %name.imdpquot1.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot1.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply approximate bisimulation quotienting with tolerance 0.01."
+  },
+  "storm-imdpapproxbisim2": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0.05 --bisimulation:exportquotient %name.imdpquot2.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot2.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply approximate bisimulation quotienting with tolerance 0.05."
+  },
+  "storm-imdpapproxbisim3": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0.1 --bisimulation:exportquotient %name.imdpquot3.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot3.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply approximate bisimulation quotienting with tolerance 0.1."
+  },
+  "storm-imdpapproxbisim4": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0.2 --bisimulation:exportquotient %name.imdpquot4.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot4.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply approximate bisimulation quotienting with tolerance 0.2."
+  },
+  "storm-imdpapproxbisim5": {
+    "bin": "bin/storm",
+    "cmd": "--explicit-umb %imdp --bisimulation --bisimulation:tolerance 0.4 --bisimulation:exportquotient %name.imdpquot5.tar.gz --uncertainty-resolution robust --prop '%property-finite-horizon; %property'",
+    "input-files": [
+      "%imdp"
+    ],
+    "output-files": [
+      "%name.imdpquot5.tar.gz"
+    ],
+    "description": "The IMDP with learned interval probabilities. Apply approximate bisimulation quotienting with tolerance 0.4."
+  }
+}
