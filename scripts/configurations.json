@@ -10,7 +10,7 @@
   },
   "storm-mdpbisim": {
     "bin": "bin/storm",
-    "cmd": "--explicit-umb %mdp --bisimulation --bisimulation:tolerance 0 --bisimulation:exportquotient %name.mdpquot.tar.gz --prop '%property-finite-horizon; %property'",
+    "cmd": "--explicit-umb %mdp --bisimulation --bisimulation:exportquotient %name.mdpquot.tar.gz --prop '%property-finite-horizon; %property'",
     "input-files": [
       "%mdp"
     ],
