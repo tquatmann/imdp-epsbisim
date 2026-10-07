@@ -65,7 +65,12 @@ class Config:
         self.id = id
         self.entry = entry
         cmd = entry["cmd"]
-        self.model = "mdp" if "%mdp" in entry.get("input-files", []) else "imdp"
+        # The model that the configuration runs on is the index key of its input file: mdp or imdp<identifier>,
+        # where the identifier distinguishes several IMDPs that were learned for an MDP (see mdp_to_imdp.py).
+        models = [name for file in entry.get("input-files", []) for name in placeholders(file)]
+        self.model = models[0] if models else "mdp"
+        self.is_imdp = self.model != "mdp"
+        self.identifier = self.model[len("imdp"):] if self.model.startswith("imdp") else ""
         tolerance = re.search(r"--bisimulation:tolerance\s+(\S+)", cmd)
         # None if the configuration does not apply bisimulation quotienting
         self.tolerance = float(tolerance.group(1)) if tolerance else None
@@ -91,7 +96,7 @@ class Config:
 
     @property
     def label(self):
-        model = "MDP" if self.model == "mdp" else "iMDP"
+        model = "MDP" if self.model == "mdp" else f"iMDP {self.identifier}".rstrip()
         if self.tolerance is None:
             return model
         return f"{model} bisim" if self.tolerance == 0 else f"{model} \u03b5={self.tolerance_text}"
@@ -103,7 +108,7 @@ class Config:
         return f"{self.model}-exact" if self.tolerance == 0 else f"{self.model}-{self.tolerance_text}"
 
     def sort_key(self):
-        return (self.model != "mdp", -1 if self.tolerance is None else self.tolerance)
+        return (self.is_imdp, self.model, -1 if self.tolerance is None else self.tolerance)
 
 
 class PropertyResult:
@@ -203,7 +208,7 @@ def quotient_file(outdir, config, benchmark_id, benchmark):
 def run_evalquo(evalquo, logdir, outdir, configs, benchmarks):
     """Compare each iMDP quotient with the MDP quotient and append the result to the log of the iMDP quotient."""
     mdp_configs = [c for c in configs if c.exports_quotient and c.model == "mdp"]
-    imdp_configs = [c for c in configs if c.exports_quotient and c.model == "imdp"]
+    imdp_configs = [c for c in configs if c.exports_quotient and c.is_imdp]
     if not mdp_configs or not imdp_configs:
         return
     if len(mdp_configs) > 1:
@@ -352,11 +357,18 @@ def build_table(logdir, configs, benchmarks):
     """
     configs = sorted(configs, key=Config.sort_key)
     quotients = [c for c in configs if c.tolerance is not None]
-    imdp_quotients = [c for c in quotients if c.model == "imdp" and c.exports_quotient]
+    imdp_quotients = [c for c in quotients if c.is_imdp and c.exports_quotient]
+    imdp_models = list(dict.fromkeys(c.model for c in configs if c.is_imdp))
     kinds = [kind for kind in ("indef", "fin") if any(kind in c.kinds for c in configs)]
     by_kind = {kind: [c for c in configs if kind in c.kinds] for kind in kinds}
 
     columns = [("", "benchmark", ["benchmark"]), ("", "type", ["property-type"]), ("", "states", ["states"])]
+    # What mdp_to_imdp.py recorded about the learned iMDPs
+    imdp_statistics = [(f"{model}-maxl1", "max. L1 diameter") for model in imdp_models] + \
+                      [(f"{model}-learning-accuracy", "learning accuracy") for model in imdp_models]
+    for key, group in imdp_statistics:
+        model = key.split("-")[0]
+        columns.append((group, f"iMDP {model[len('imdp'):]}".rstrip(), [key]))
     for config in quotients:
         with_relation = config in imdp_quotients
         columns.append(("quotient states", config.label, [f"quotient-states-{config.csv_label}"] +
@@ -366,19 +378,22 @@ def build_table(logdir, configs, benchmarks):
     for kind in kinds:
         for config in by_kind[kind]:
             columns.append((f"value, {KIND_TEXT[kind]}", config.label, [f"value-{kind}-{config.csv_label}"]))
-    # The values obtained with bisimulation are compared with the one of the iMDP itself. Without a
-    # configuration for that, they are compared with the value obtained with exact bisimulation.
-    exact, compared = {}, {}
+    # The values obtained with bisimulation are compared with the one of the same iMDP without quotienting.
+    # Without a configuration for that, they are compared with the value obtained with exact bisimulation.
+    # compared[kind] consists of pairs of a configuration and the configuration it is compared with.
+    compared = {}
     for kind in kinds:
-        imdp = [c for c in by_kind[kind] if c.model == "imdp"]
-        exact[kind] = next((c for c in imdp if c.tolerance is None), None) or next((c for c in imdp if c.tolerance == 0), None)
-        compared[kind] = [c for c in imdp if c is not exact[kind]] if exact[kind] else []
+        compared[kind] = []
+        for model in imdp_models:
+            imdp = [c for c in by_kind[kind] if c.model == model]
+            exact = next((c for c in imdp if c.tolerance is None), None) or next((c for c in imdp if c.tolerance == 0), None)
+            compared[kind] += [(c, exact) for c in imdp if exact is not None and c is not exact]
     # Index 0 is the absolute difference and index 1 the relative one.
     differences = [(index, kind) for kind in kinds for index in (0, 1)]
     for index, kind in differences:
         name = ("absolute", "absdiff") if index == 0 else ("relative", "reldiff")
-        for config in compared[kind]:
-            columns.append((f"{name[0]} difference to exact iMDP value ({exact[kind].label}), {KIND_TEXT[kind]}",
+        for config, _ in compared[kind]:
+            columns.append((f"{name[0]} difference to exact iMDP value, {KIND_TEXT[kind]}",
                             config.label, [f"{name[1]}-{kind}-{config.csv_label}"]))
     for kind in kinds:
         for config in by_kind[kind]:
@@ -396,12 +411,16 @@ def build_table(logdir, configs, benchmarks):
         ptype = property_type(benchmark)
         row = [Cell([benchmark_id], benchmark_id, css=ptype.lower()), Cell([ptype], ptype, css=ptype.lower()),
                Cell([states], f"{states:,}" if isinstance(states, int) else str(states))]
+        for key, _ in imdp_statistics:
+            value = benchmark.get(key, "")
+            row.append(Cell([value], f"{value:.4g}" if isinstance(value, float) else str(value) or "\u2013",
+                            css="" if value != "" else "none"))
         row += [quotient_cell(runs[c.id], c in imdp_quotients) for c in quotients]
         row += [bisimulation_time_cell(runs[c.id]) for c in quotients]
         for kind in kinds:
             row += [value_cell(runs[c.id], kind) for c in by_kind[kind]]
         for index, kind in differences:
-            row += [difference_cells(runs[c.id], runs[exact[kind].id], kind)[index] for c in compared[kind]]
+            row += [difference_cells(runs[c.id], runs[exact.id], kind)[index] for c, exact in compared[kind]]
         for kind in kinds:
             row += [checking_time_cell(runs[c.id], kind) for c in by_kind[kind]]
         row += [wall_time_cell(runs[c.id]) for c in configs]
@@ -650,6 +669,10 @@ def main():
     parser.add_argument("--tabledir", type=Path, default=Path("."),
                         help="directory that table.csv, table.html and the log pages are written to "
                              "(default: current directory)")
+    parser.add_argument("--configs", type=Path, default=CONFIGS_FILE,
+                        help=f"the configurations that were run (default: {CONFIGS_FILE})")
+    parser.add_argument("--index", type=Path, default=INDEX_FILE,
+                        help=f"the index of the benchmarks that were run (default: {INDEX_FILE})")
     parser.add_argument("--evalquo", type=Path, default=EVALQUO, help=f"the evalquo binary (default: {EVALQUO})")
     parser.add_argument("--no-evalquo", action="store_true",
                         help="do not run evalquo, only use the results that are already in the logs")
@@ -657,8 +680,8 @@ def main():
 
     if not args.logdir.is_dir():
         sys.exit(f"log directory not found: {args.logdir}")
-    configs = [Config(id, entry) for id, entry in load_dict(CONFIGS_FILE).items()]
-    benchmarks = load_dict(INDEX_FILE)
+    configs = [Config(id, entry) for id, entry in load_dict(args.configs).items()]
+    benchmarks = load_dict(args.index)
 
     if not args.no_evalquo:
         run_evalquo(args.evalquo, args.logdir, args.outdir, configs, benchmarks)
