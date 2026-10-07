@@ -64,7 +64,7 @@ def main():
     parser.add_argument("--invfile", required=True, help="file that the invocations are written to")
     parser.add_argument("--configs", help="comma separated list of configurations (default: all)")
     parser.add_argument("--benchmarks", help="comma separated list of benchmarks (default: all)")
-    parser.add_argument("--timelimit", type=int, default=1800, help="time limit in seconds (default: 1800)")
+    parser.add_argument("--timelimit", type=int, default=7200, help="time limit in seconds (default: 7200)")
     parser.add_argument("--logdir", default="logs", help="directory for the logs, relative paths are relative to the "
                              "directory that run.py is called from (default: logs)")
     parser.add_argument("--outdir", default="output",
