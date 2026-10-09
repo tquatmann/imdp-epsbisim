@@ -62,11 +62,17 @@ def main():
     with open(args.index) as f:
         index = json.load(f)
 
+    # The learned IMDPs are listed with the keys imdp<identifier>, see mdp_to_imdp.py.
+    imdps = sorted({key for b in index.values() for key in b if re.fullmatch(r"imdp[A-Za-z0-9]*", key)})
+
     families = Counter(name.split(".")[0] for name in index)
     print(f"{len(index)} benchmarks from {len(families)} model families")
-    print(f"  with a learned IMDP:               {sum('imdp' in b for b in index.values()):>4}")
-    print(f"  with a finite horizon property:    {sum('property-finite-horizon' in b for b in index.values()):>4}")
-    print(f"  with a reference result:           {sum('reference-result' in b for b in index.values()):>4}")
+    for imdp in imdps:
+        print(f"  {f'with a learned IMDP ({imdp}):':<33}  {sum(imdp in b for b in index.values()):>4}")
+    if not imdps:
+        print(f"  {'with a learned IMDP:':<33}  {0:>4}")
+    print(f"  {'with a finite horizon property:':<33}  {sum('property-finite-horizon' in b for b in index.values()):>4}")
+    print(f"  {'with a reference result:':<33}  {sum('reference-result' in b for b in index.values()):>4}")
     print()
 
     print_counts("Benchmarks per type", Counter(b.get("type", "unknown") for b in index.values()))
@@ -94,16 +100,32 @@ def main():
     ])
 
     print_distributions("Learned IMDPs", [
-        ("imdp-maxl1", values(lambda b: b["imdp-maxl1"])),
-        ("imdp-learning-accuracy", values(lambda b: b["imdp-learning-accuracy"])),
+        (f"{imdp}-{quantity}", values(lambda b, key=f"{imdp}-{quantity}": b[key]))
+        for quantity in ("maxl1", "learning-accuracy") for imdp in imdps
     ])
 
-    accuracies = [b["imdp-learning-accuracy"] for b in index.values() if "imdp-learning-accuracy" in b]
+    bounds = (1.0, 0.999, 0.99, 0.95, 0.9)
+    accuracies = {imdp: [b[f"{imdp}-learning-accuracy"] for b in index.values() if f"{imdp}-learning-accuracy" in b]
+                  for imdp in imdps}
+    accuracies = {imdp: values for imdp, values in accuracies.items() if values}
     if accuracies:
-        print("Learning accuracy (fraction of states whose learned intervals contain the true distribution):")
-        for bound in (1.0, 0.999, 0.99, 0.95, 0.9):
+        print("Learning accuracy (fraction of states whose learned intervals contain the true distribution),")
+        print("number of benchmarks that reach it:")
+        width = max(len(imdp) for imdp in accuracies) + 2
+        print(f"  {'':<9}" + "".join(f"{imdp:>{width}}" for imdp in accuracies))
+        for bound in bounds:
             comparison = "= 1" if bound == 1.0 else f">= {bound}"
-            print(f"  {comparison:<9}  {sum(a >= bound for a in accuracies):>4} of {len(accuracies)} benchmarks")
+            print(f"  {comparison:<9}" + "".join(f"{sum(a >= bound for a in values):>{width}}" for values in accuracies.values()))
+        print(f"  {'of':<9}" + "".join(f"{len(values):>{width}}" for values in accuracies.values()))
+
+    # How the IMDPs of a benchmark compare with each other
+    for first, second in ((a, b) for i, a in enumerate(imdps) for b in imdps[i + 1:]):
+        both = [b for b in index.values() if f"{first}-maxl1" in b and f"{second}-maxl1" in b]
+        if both:
+            smaller = sum(b[f"{first}-maxl1"] < b[f"{second}-maxl1"] for b in both)
+            larger = sum(b[f"{first}-maxl1"] > b[f"{second}-maxl1"] for b in both)
+            print(f"\nMax. L1 diameter of {first} compared with {second} on the {len(both)} benchmarks that have both: "
+                  f"smaller for {smaller}, larger for {larger}, equal for {len(both) - smaller - larger}")
 
 
 if __name__ == "__main__":

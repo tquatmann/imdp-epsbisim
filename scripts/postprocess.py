@@ -72,9 +72,14 @@ class Config:
         self.is_imdp = self.model != "mdp"
         self.identifier = self.model[len("imdp"):] if self.model.startswith("imdp") else ""
         tolerance = re.search(r"--bisimulation:tolerance\s+(\S+)", cmd)
-        # None if the configuration does not apply bisimulation quotienting
-        self.tolerance = float(tolerance.group(1)) if tolerance else None
-        self.tolerance_text = tolerance.group(1) if tolerance else None
+        # None if the configuration does not apply bisimulation quotienting. Bisimulation without a given
+        # tolerance (i.e. with the default tolerance of the tool) counts as exact bisimulation.
+        if tolerance:
+            self.tolerance, self.tolerance_text = float(tolerance.group(1)), tolerance.group(1)
+        elif re.search(r"--bisimulation(\s|$)", cmd):
+            self.tolerance, self.tolerance_text = 0.0, "0"
+        else:
+            self.tolerance, self.tolerance_text = None, None
         self.exports_quotient = bool(entry.get("output-files"))
         tokens = shlex.split(cmd)
         # The argument with the properties, which are checked in the order in which they are given.
@@ -203,6 +208,34 @@ def quotient_file(outdir, config, benchmark_id, benchmark):
         return None
     output_files = resolve(config.entry, values)[2]
     return outdir / output_files[0]
+
+
+def print_accumulated_wall_time(logdir):
+    """Prints the sum of the wallclock times of all runs that have a log, including runs that timed out or failed."""
+    logs = sorted(logdir.glob("*.log"))
+    times = [Run.number(r"^Wallclock time:\t(\S+)$", log.read_text(errors="replace").split(EVALQUO_MARKER)[0])
+             for log in logs]
+    total = sum(time for time in times if time is not None)
+    hours, seconds = divmod(round(total), 3600)
+    without = sum(time is None for time in times)
+    print(f"accumulated wallclock time of the {len(logs) - without} runs in {logdir}: {total:.0f}s "
+          f"({hours}h {seconds // 60:02d}min)" + (f"; {without} logs have no wallclock time" if without else ""))
+
+
+def check_index(logdir, configs, benchmarks, index_file):
+    """Stops if there is a log of a configuration for a benchmark that does not have the model the configuration runs on.
+
+    Then, the index is not the one that the runs were made with, and the table would be wrong or incomplete.
+    """
+    missing = {}
+    for config in configs:
+        for benchmark_id, benchmark in benchmarks.items():
+            if config.model not in benchmark and log_file(logdir, config, benchmark_id).is_file():
+                missing.setdefault(config.model, []).append(benchmark_id)
+    if missing:
+        details = "; ".join(f"'{model}' for {len(set(ids))} benchmark(s), e.g. {ids[0]}" for model, ids in missing.items())
+        sys.exit(f"{index_file} does not match the logs: there are logs of runs on models that it does not list "
+                 f"({details}). Use the index that the runs were made with (see --index).")
 
 
 def run_evalquo(evalquo, logdir, outdir, configs, benchmarks):
@@ -683,9 +716,12 @@ def main():
     configs = [Config(id, entry) for id, entry in load_dict(args.configs).items()]
     benchmarks = load_dict(args.index)
 
+    check_index(args.logdir, configs, benchmarks, args.index)
+
     if not args.no_evalquo:
         run_evalquo(args.evalquo, args.logdir, args.outdir, configs, benchmarks)
 
+    print_accumulated_wall_time(args.logdir)
     columns, rows = build_table(args.logdir, configs, benchmarks)
     args.tabledir.mkdir(parents=True, exist_ok=True)
     write_csv(args.tabledir / "table.csv", columns, rows)
