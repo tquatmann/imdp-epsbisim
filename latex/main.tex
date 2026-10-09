@@ -1,0 +1,98 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{ifthen}
+\usepackage[Tol,keep-defaults]{colorblind}
+\usepackage{showframe}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{pgfplots.groupplots}
+
+\input{plots}
+
+\begin{document}
+
+\title{Bisimulation Quotients of Learned Interval MDPs}
+\titlerunning{Bisimulation Quotients of Learned IMDPs}
+\author{Anonymous}
+\institute{Anonymous}
+\maketitle
+
+\section{Experiments}
+
+%% The figures for one of the learned IMDPs.
+%% #1: the IMDP as it occurs in the csv columns (e.g. imdpa)  #2: how the captions refer to it
+\newcommand{\imdpfigures}[2]{%
+\renewcommand{\imdp}{#1}%
+\begin{figure}[t]
+    \centering
+    \vspace{4mm}% room for the legend, which is not part of the bounding box
+    % Each row is a box of the width of the text, so that plots that are too large show up as an overfull box.
+    \makebox[\linewidth][s]{%
+      \statesscatterplot{states}{$\statesinput$}{quotient-states-mdp-exact}{$\statesmdp$}{}{false}\hfill
+      \statesscatterplot{states}{$\statesinput$}{quotient-states-\imdp-exact}{$\statesimdp$}{quotient-relation-\imdp-exact}{true}\hfill
+      \quotientratioplot{\imdp-exact}{\statesimdp}{false}}
+
+    \medskip
+
+    \makebox[\linewidth][s]{%
+      \quotientratioplot{\imdp-0.05}{\statesimdp[0.05]}{false}\hfill
+      \quotientratioplot{\imdp-0.1}{\statesimdp[0.1]}{false}\hfill
+      \quotientratioplot{\imdp-0.2}{\statesimdp[0.2]}{false}}
+    \caption{Number of states of the bisimulation quotients for #2. Top left and middle: the input model ($\statesinput$ states) against
+    the quotient of the MDP ($\statesmdp$) and of the learned IMDP ($\statesimdp$).
+    Other plots: the MDP quotient against the size of the IMDP quotient relative to it, for exact
+    bisimulation and for tolerances $\varepsilon \in \{0.05, 0.1, 0.2\}$; a point $(x,y)$ means that the MDP
+    quotient has $x$ states and the IMDP quotient has $x \cdot y$ states.
+    The marks tell how the IMDP quotient relates to the MDP quotient.}
+    \label{fig:states-#1}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \makebox[\linewidth][s]{%
+      \errorquantileplot{%
+        \imdp-exact/colbisim/$\sim$,
+        \imdp-0.05/colepsa/$\varepsilon{=}0.05$,
+        \imdp-0.1/colepsb/$\varepsilon{=}0.1$,
+        \imdp-0.2/colepsc/$\varepsilon{=}0.2$}\hfill
+      \valuescatterplot{\imdp}{IMDP}{\imdp-0.2}{$\statesimdp[0.2]$}}
+    \caption{Error made by model checking the bisimulation quotient instead of the learned IMDP, for #2.
+    Left: a point $(x,y)$ on a line means that there are $x$ properties for which the absolute error is at most $y$.
+    Right: the values obtained for the IMDP against the values obtained for its quotient with tolerance
+    $\varepsilon = 0.2$, for properties about probabilities ($\mathrm{P}$) and rewards ($\mathrm{R}$) and their
+    step-bounded variants ($\mathrm{P}^{\le}$, $\mathrm{R}^{\le}$).}
+    \label{fig:error-#1}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \makebox[\linewidth][s]{%
+      \bisimulationtimeplot{0.2}{colepsc}\hfill
+      \wallclocktimeplot{\imdp-exact}{$\statesimdp$}\hfill
+      \wallclocktimeplot{\imdp-0.05}{$\statesimdp[0.05]$}}
+
+    \medskip
+
+    \makebox[\linewidth][s]{%
+      \wallclocktimeplot{\imdp-0.1}{$\statesimdp[0.1]$}\hfill
+      \wallclocktimeplot{\imdp-0.2}{$\statesimdp[0.2]$}\hfill
+      \makebox[1.35\scatterplotsize][c]{\raisebox{8mm}{\errorclasslegend}}}
+    \caption{Runtimes in seconds for #2. Top left: size of the input model against the time for quotienting the IMDP,
+    for exact bisimulation and for tolerance $\varepsilon = 0.2$.
+    Other plots: wallclock time of the whole run on the IMDP against the wallclock time when quotienting first,
+    for exact bisimulation and for tolerances $\varepsilon \in \{0.05, 0.1, 0.2\}$. The marks give the largest
+    absolute error over the properties of the benchmark; points marked \emph{TO} ran out of time or memory.}
+    \label{fig:wallclock-#1}
+\end{figure}
+\clearpage
+}
+
+\imdpfigures{imdpa}{the IMDPs with identifier \emph{a}}
+\imdpfigures{imdpb}{the IMDPs with identifier \emph{b}}
+
+\end{document}

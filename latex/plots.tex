@@ -1,0 +1,414 @@
+%% Plot styles for the bisimulation figures.
+%% The data is produced by scripts/postprocess.py (plotdata.csv).
+
+%% Colours: the bright qualitative scheme of Paul Tol (T-Q-B) from the colorblind package.
+\colorlet{tolblue}{T-Q-B1}
+\colorlet{tolcyan}{T-Q-B2}
+\colorlet{tolgreen}{T-Q-B3}
+\colorlet{tolyellow}{T-Q-B4}
+\colorlet{tolred}{T-Q-B5}
+\colorlet{tolpurple}{T-Q-B6}
+\colorlet{tolgrey}{T-Q-B0}
+
+%% The colours of the configurations, which are the same in all figures. They differ from the
+%% colours of the kinds of properties (blue and red).
+\colorlet{colbisim}{tolpurple}   % exact bisimulation
+\colorlet{colepsa}{tolcyan}      % tolerance 0.05
+\colorlet{colepsb}{tolyellow}    % tolerance 0.1
+\colorlet{colepsc}{tolgreen}     % tolerance 0.2
+
+%% The IMDP that the plots are about, as it occurs in the csv columns (e.g. imdpa for the IMDPs learned
+%% with identifier a, see mdp_to_imdp.py). Redefine it to switch to another IMDP.
+\newcommand{\imdp}{imdpa}
+
+%% Where the csv files written by postprocess.py live.
+\newcommand{\resultsdir}{results}
+\newcommand{\plotdata}{\resultsdir/plotdata.csv}
+
+%% The models whose number of states the axes show: the input model, the MDP quotient and the IMDP
+%% quotient, where the optional argument is the tolerance of approximate bisimulation.
+\newcommand{\statesinput}{|S|}
+\newcommand{\statesmdp}{\mathrm{MDP}/{\sim}}
+\newcommand{\statesimdp}[1][]{\mathrm{IMDP}/{\sim}\ifthenelse{\equal{#1}{}}{}{_{\varepsilon=#1}}}
+
+%% Smallest value in the data for the quantile plots; this must match PLOT_MIN_VALUE in postprocess.py.
+\newcommand{\plotminvalue}{1e-8}
+%% Position of the value 0 in the scatter plot of the values, which has logarithmic axes.
+\newcommand{\plotzero}{1e-12}
+
+%% Position of runs that exceeded the time or memory limit in the plots of the runtimes;
+%% this must match PLOT_TIMEOUT in postprocess.py. \plotmaxtime is the upper end of the time axes.
+\newcommand{\plottimeout}{20000}
+\newcommand{\plotmaxtime}{45000}
+%% Width of the quantile plot (without labels); chosen such that it fills a row together with a scatter plot.
+\newlength{\quantileplotwidth}
+\setlength{\quantileplotwidth}{0.545\linewidth}
+\newlength{\scatterplotsize}
+\setlength{\scatterplotsize}{0.222\linewidth}
+
+
+%% The marks for the relation of an IMDP quotient to the MDP quotient (columns quotient-relation-*).
+\tikzset{
+  relation equal/.style={mark=*,tolgreen,mark size=1.3},
+  relation finer/.style={mark=+,tolblue,mark size=1.9,semithick},
+  relation coarser/.style={mark=x,tolpurple,mark size=2.1,thick},
+  relation incomparable/.style={mark=star,tolred,mark size=1.9,semithick},
+}
+%% The marks for the kinds of properties: probabilities (P) and rewards (R), where the step-bounded
+%% (finite horizon) variants have hollow marks.
+\tikzset{
+  property P indef/.style={mark=*,tolblue,mark size=1.3},
+  property P fin/.style={mark=o,tolblue,mark size=1.4,semithick},
+  property R indef/.style={mark=triangle*,tolred,mark size=1.7},
+  property R fin/.style={mark=triangle,tolred,mark size=1.7,semithick},
+  %% The marks for exact and approximate bisimulation in the plot of the quotienting times.
+  %% The approximate one additionally gets the colour of its configuration.
+  bisimulation exact/.style={mark=square,colbisim,mark size=1.3,semithick},
+  bisimulation approx/.style={mark=x,mark size=1.9,semithick},
+}
+%% The marks for the classes of the largest absolute error of a run (columns error-class-*), which must
+%% match ERROR_CLASSES in postprocess.py. Runs without any error value are in the class none.
+\tikzset{
+  error low/.style={mark=*,tolblue,mark size=1.3},
+  error small/.style={mark=diamond*,tolyellow,mark size=1.8},
+  error medium/.style={mark=triangle*,tolred,mark size=1.8},
+  error high/.style={mark=star,black,mark size=2.0,semithick},
+  error none/.style={mark=x,tolgrey,mark size=1.6,semithick},
+}
+\pgfplotsset{
+  %% Only keep the rows where column #1 has the value #2.
+  discard if not/.style 2 args={
+    x filter/.append code={%
+      \edef\tempa{\thisrow{#1}}\edef\tempb{#2}%
+      \ifx\tempa\tempb\else\def\pgfmathresult{inf}\fi},
+  },
+  %% Common style of all (small) plots.
+  small plot/.style={
+    scale only axis,
+    axis x line=bottom,
+    axis y line=left,
+    unbounded coords=discard, filter discard warning=false,
+    % The x label has a fixed distance to the axis, independent of the height of the tick labels.
+    xlabel style={font=\scriptsize, at={(axis description cs:0.5,0)}, anchor=north, yshift=-11pt},
+    ylabel style={font=\scriptsize, yshift=-6pt},
+    xticklabel style={font=\scriptsize},
+    yticklabel style={font=\scriptsize},
+    grid=major,
+    xminorticks=false, yminorticks=false,
+    axis on top=false,
+    clip mode=individual,  % marks are drawn after (i.e. on top of) all lines
+  },
+  %% Legend with one column in the top left corner of a plot.
+  legend inside/.style={
+    legend columns=1,
+    legend cell align={left},
+    legend style={font=\tiny, inner sep=1pt, row sep=-2pt, at={(0.03,0.97)}, anchor=north west},
+  },
+  %% Common style of the quantile plots.
+  quantile plot/.style={
+    small plot,
+    height=\scatterplotsize,
+    ylabel style={yshift=2pt},
+    legend cell align={left},
+    legend style={font=\tiny, inner sep=1.5pt, at={(0.02,0.97)}, anchor=north west,
+                  /tikz/every even column/.append style={column sep=4pt}},
+    legend image code/.code={\draw[##1] plot coordinates {(0cm,0cm) (0.3cm,0cm)};},
+    every axis plot/.append style={thick, no marks},
+  },
+  %% Legend above a plot; it is not part of the bounding box as it may be wider than the plot.
+  legend above/.style={
+    legend columns=4,
+    legend style={font=\tiny, inner sep=1.5pt, /tikz/every even column/.append style={column sep=4pt},
+                  at={(0.5,1.08)}, anchor=south, overlay},
+  },
+}
+
+%% Counting how often each relation occurs in a column of the data.
+\pgfplotstableread[col sep=comma]{\plotdata}\plotdatatable
+\newcount\relationcountequal
+\newcount\relationcountfiner
+\newcount\relationcountcoarser
+\newcount\relationcountincomparable
+%% #1: column with the relation
+\newcommand{\countrelations}[1]{%
+  \global\relationcountequal=0 \global\relationcountfiner=0
+  \global\relationcountcoarser=0 \global\relationcountincomparable=0
+  \pgfplotstableforeachcolumnelement{#1}\of\plotdatatable\as\cell{%
+    \ifcsname relationcount\cell\endcsname
+      \global\advance\csname relationcount\cell\endcsname by 1
+    \fi}%
+}
+%% Counts all rows with a value in column #1 as equal.
+\newcommand{\countallequal}[1]{%
+  \global\relationcountequal=0
+  \pgfplotstableforeachcolumnelement{#1}\of\plotdatatable\as\cell{%
+    \ifthenelse{\equal{\cell}{nan}}{}{\global\advance\relationcountequal by 1}}%
+}
+%% The marks of the relations as boxes. They are drawn here, i.e. outside of any axis, as a picture
+%% within an axis would inherit the settings of that axis.
+\newcommand{\definerelationmark}[1]{%
+  \expandafter\newsavebox\csname relationmark#1\endcsname
+  \expandafter\sbox\csname relationmark#1\endcsname{%
+    \tikz[baseline=-0.55ex]{\draw[relation #1] plot[only marks] coordinates {(0,0)};}}}
+\definerelationmark{equal}
+\definerelationmark{finer}
+\definerelationmark{coarser}
+\definerelationmark{incomparable}
+%% The mark of relation #1 followed by its count.
+\newcommand{\relationcount}[1]{%
+  \makebox[1.1em][c]{\expandafter\usebox\csname relationmark#1\endcsname}%
+  \makebox[1em][r]{\the\csname relationcount#1\endcsname}}
+%% A box with the counts of the given relations in a corner of the plot.
+%% #1: comma separated list of relations  #2: north east or north west
+\newcommand{\relationcounts}[2]{%
+  \gdef\relationcountrows{}%
+  \foreach \relation in {#1}{%
+    \ifx\relationcountrows\empty
+      \xdef\relationcountrows{\noexpand\relationcount{\relation}}%
+    \else
+      \xdef\relationcountrows{\unexpanded\expandafter{\relationcountrows}\noexpand\\\noexpand\relationcount{\relation}}%
+    \fi}%
+  \ifthenelse{\equal{#2}{north east}}{\def\countsx{1}}{\def\countsx{0}}%
+  \edef\countsnode{\noexpand\node[anchor=#2, font=\noexpand\tiny, inner sep=1pt, outer sep=1.5pt, align=left,
+      fill=white, fill opacity=0.85, text opacity=1, draw=black!40, draw opacity=1, line width=0.2pt]
+    at (rel axis cs:\countsx,1)
+    {\unexpanded\expandafter{\relationcountrows}};}%
+  \countsnode
+}
+
+%% The points of a scatter plot, with marks according to the relation to the MDP quotient.
+%% One plot per relation, so that the rarer relations are drawn on top of the frequent ones.
+%% #1: table options that select x and y  #2: column with the relation  #3: show legend (true/false)
+\newcommand{\relationscatter}[3]{%
+  \foreach \relation in {equal,finer,coarser,incomparable}{%
+    \edef\plotpoints{\noexpand\addplot[only marks, relation \relation, discard if not={#2}{\relation}, forget plot]
+      table [col sep=comma, \unexpanded{#1}] {\noexpand\plotdata};}%
+    \plotpoints
+    % The legend does not depend on which relations occur in this plot.
+    \ifthenelse{\equal{#3}{true}}{%
+      \edef\plotlegend{\noexpand\addlegendimage{only marks, relation \relation}\noexpand\addlegendentry{\relation}}%
+      \plotlegend}{}%
+  }%
+}
+
+%% A scatter plot comparing two state counts.
+%% #1: x column  #2: x label  #3: y column  #4: y label
+%% #5: column with the relation to the MDP quotient that determines the marks (empty: all points are equal)
+%% #6: show legend (true/false)
+\newcommand{\statesscatterplot}[6]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      axis equal image,
+      xmin=1e2, xmax=1e8, ymin=1e2, ymax=1e8,
+      xmode=log, ymode=log,
+      xtick={1e2,1e4,1e6,1e8},
+      ytick={1e2,1e4,1e6,1e8},
+      xlabel={#2}, ylabel={#4},
+      legend above,
+    ]
+      \addplot[no marks, forget plot] coordinates {(1e2,1e2) (1e8,1e8)};
+      \addplot[no marks, densely dotted, forget plot] coordinates {(1e3,1e2) (1e8,1e7)};
+      \addplot[no marks, densely dotted, forget plot] coordinates {(1e4,1e2) (1e8,1e6)};
+      \ifthenelse{\equal{#5}{}}{%
+        \addplot[only marks, relation equal]
+          table [col sep=comma, x={#1}, y={#3}] {\plotdata};
+        \countallequal{#3}
+        \relationcounts{equal}{north west}
+      }{%
+        \relationscatter{x={#1}, y={#3}}{#5}{#6}
+        \countrelations{#5}
+        \relationcounts{equal,finer,coarser,incomparable}{north west}
+      }
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% A scatter plot of the size of an IMDP quotient relative to the size of the MDP quotient:
+%% a point (x,y) means that the MDP quotient has x states and the IMDP quotient has x*y states.
+%% #1: label of the IMDP configuration in the csv columns (e.g. imdp-exact or imdp-0.05)
+%% #2: the number of states of the IMDP quotient (math)
+%% #3: show legend (true/false)
+\newcommand{\quotientratioplot}[3]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      xmin=1e2, xmax=1e8, ymin=0.3, ymax=500,
+      xmode=log, ymode=log,
+      xtick={1e2,1e4,1e6,1e8},
+      ytick={1,10,100},
+      yticklabels={$1$,$10$,$100$},
+      xlabel={$\statesmdp$}, ylabel={$#2$ ratio},
+      ylabel style={yshift=2pt},  % the tick labels are wider here
+      legend above,
+    ]
+      \addplot[no marks, forget plot] coordinates {(1e2,1) (1e8,1)};
+      \relationscatter{x=quotient-states-mdp-exact,
+                       y expr=\thisrow{quotient-states-#1}/\thisrow{quotient-states-mdp-exact}}{quotient-relation-#1}{#3}
+      \countrelations{quotient-relation-#1}
+      \relationcounts{equal,finer,coarser,incomparable}{north east}
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% The points of a scatter plot that compares two configurations on the properties of both kinds, with
+%% marks according to the kind of property (P, P<=, R, R<=).
+%% #1: prefix of the csv columns (the columns are <prefix>-<kind>-<configuration>)
+%% #2: label of the x configuration in the csv columns  #3: label of the y configuration
+%% #4: smaller values are shown at this position  #5: show legend (true/false)
+\newcommand{\propertyscatter}[5]{%
+  \foreach \class/\kind/\name in {P/indef/$\mathrm{P}$, P/fin/$\mathrm{P}^{\le}$, R/indef/$\mathrm{R}$, R/fin/$\mathrm{R}^{\le}$}{%
+    \edef\plotpoints{\noexpand\addplot[only marks, property \class\space\kind, discard if not={property-class}{\class}]
+      table [col sep=comma,
+             x expr={max(\noexpand\thisrow{#1-\kind-#2},#4)},
+             y expr={max(\noexpand\thisrow{#1-\kind-#3},#4)}] {\noexpand\plotdata};}%
+    \plotpoints
+    \ifthenelse{\equal{#5}{true}}{%
+      \edef\plotlegend{\noexpand\addlegendentry{\unexpanded\expandafter{\name}}}\plotlegend}{}%
+  }%
+}
+
+%% The lines of a quantile plot.
+%% #1: csv file, relative to \resultsdir  #2: comma separated list of column/colour/legend-entry triples
+\newcommand{\quantilelines}[2]{%
+  \foreach \col/\colour/\name in {#2}{%
+    \edef\plotline{\noexpand\addplot[\colour]
+      table [x=i, y=\col, col sep=comma] {\resultsdir/#1};
+      \noexpand\addlegendentry{\unexpanded\expandafter{\name}}}%
+    \plotline
+  }%
+}
+
+\newcount\propertycounter
+%% A quantile plot of the absolute errors: a point (x,y) on a line means that there are x properties
+%% for which the absolute error of the configuration is at most y. The x axis ends at the number of properties.
+%% #1: comma separated list of column/colour/legend-entry triples
+\newcommand{\errorquantileplot}[1]{%
+  % The number of properties is the number of values of exact bisimulation.
+  \pgfplotstableread[col sep=comma]{\resultsdir/quantile-absdiff.csv}\quantiletable
+  \global\propertycounter=0
+  \edef\countproperties{\noexpand\pgfplotstableforeachcolumnelement{\imdp-exact}}%
+  \countproperties\of\quantiletable\as\cell{%
+    \ifthenelse{\equal{\cell}{nan}}{}{\global\advance\propertycounter by 1}}%
+  \edef\propertycount{\the\propertycounter}%
+  \begin{tikzpicture}
+    \begin{axis}[
+      quantile plot,
+      ymode=log,  % cannot be part of a style
+      width=\quantileplotwidth,
+      xmin=0, xmax=\propertycount,
+      ymin=\plotminvalue, ymax=0.1,
+      xtick={0,20,40,60,80},
+      extra x ticks={\propertycount},
+      ytick={1e-8,1e-7,1e-6,1e-5,1e-4,1e-3,1e-2,1e-1},
+      yticklabels={${\le}10^{-8}$,,$10^{-6}$,,$10^{-4}$,,$10^{-2}$,},
+      xlabel={properties (\propertycount{} in total)}, ylabel={absolute error},
+      legend columns=1,
+      restrict y to domain*=-20:0,  % the natural logarithm of the error; larger errors leave the plot at the top
+    ]
+      \quantilelines{quantile-absdiff.csv}{#1}
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% A scatter plot comparing the values of the properties (of both kinds) for two configurations.
+%% The value 0 is shown at \plotzero.
+%% #1: label of the x configuration in the csv columns  #2: x label
+%% #3: label of the y configuration in the csv columns  #4: y label
+\newcommand{\valuescatterplot}[4]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      xmin=\plotzero, xmax=1e8, ymin=\plotzero, ymax=1e8,
+      xmode=log, ymode=log,
+      xtick={1e-12,1e-8,1e-4,1,1e4,1e8},
+      xticklabels={$0$,,$10^{-4}$,,$10^{4}$,},
+      ytick={1e-12,1e-8,1e-4,1,1e4,1e8},
+      yticklabels={$0$,,$10^{-4}$,,$10^{4}$,},
+      xlabel={#2}, ylabel={#4},
+      legend inside,
+    ]
+      \addplot[no marks, forget plot] coordinates {(\plotzero,\plotzero) (1e8,1e8)};
+      \propertyscatter{value}{#1}{#3}{\plotzero}{true}
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% A scatter plot of the time for bisimulation quotienting against the size of the input model,
+%% for exact bisimulation of the IMDP and for approximate bisimulation with the given tolerance.
+%% #1: tolerance of approximate bisimulation (as in the csv columns)  #2: colour of that configuration
+\newcommand{\bisimulationtimeplot}[2]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      xmin=1e2, xmax=1e8, ymin=1e-3, ymax=1e3,
+      xmode=log, ymode=log,
+      xtick={1e2,1e4,1e6,1e8},
+      ytick={1e-3,1e-2,1e-1,1,1e1,1e2,1e3},
+      yticklabels={$10^{-3}$,,$0.1$,,$10$,,$10^{3}$},
+      xlabel={$\statesinput$}, ylabel={quotienting time},
+      legend inside,
+    ]
+      \addplot[only marks, bisimulation exact]
+        table [col sep=comma, x=states, y=bisimulation-time-\imdp-exact] {\plotdata};
+      \addlegendentry{$\sim$}
+      \addplot[only marks, bisimulation approx, #2]
+        table [col sep=comma, x=states, y=bisimulation-time-\imdp-#1] {\plotdata};
+      \addlegendentry{$\varepsilon{=}#1$}
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% A scatter plot of the wallclock times of the whole run: on the IMDP against with a quotient of it.
+%% The marks tell how large the absolute error is; larger errors are drawn on top.
+%% #1: label of the quotient configuration in the csv columns  #2: y label
+\newcommand{\wallclocktimeplot}[2]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      xmin=0.1, xmax=\plotmaxtime, ymin=0.1, ymax=\plotmaxtime,
+      xmode=log, ymode=log,
+      xtick={0.1,1,10,100,1000},
+      xticklabels={$0.1$,,$10$,,$10^{3}$},
+      ytick={0.1,1,10,100,1000},
+      yticklabels={$0.1$,,$10$,,$10^{3}$},
+      extra x ticks={\plottimeout}, extra x tick labels={TO},
+      extra x tick style={grid=major},
+      extra y ticks={\plottimeout}, extra y tick labels={TO},
+      extra y tick style={grid=major},
+      xlabel={IMDP}, ylabel={#2},
+    ]
+      \addplot[no marks, forget plot] coordinates {(0.1,0.1) (7200,7200)};
+      \addplot[no marks, densely dotted, forget plot] coordinates {(1,0.1) (7200,720)};
+      \addplot[no marks, densely dotted, forget plot] coordinates {(0.1,1) (720,7200)};
+      \foreach \class in {none,low,small,medium,high}{%
+        \edef\plotpoints{\noexpand\addplot[only marks, error \class, discard if not={error-class-#1}{\class}, forget plot]
+          table [col sep=comma, x=wallclock-time-\imdp, y=wallclock-time-#1] {\noexpand\plotdata};}%
+        \plotpoints
+      }
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% The legend for the marks of \wallclocktimeplot, as a box that can be placed next to the plots.
+\newcommand{\errorclasslegend}{%
+  \begin{tikzpicture}[font=\tiny]
+    \matrix[draw, inner sep=2pt, row sep=1pt, column sep=3pt, nodes={inner sep=0pt, anchor=west}] {
+      \node {largest absolute error}; \\
+      \draw[error low] plot[only marks] coordinates {(0,0)}; \node at (0.25,0) {${\le}\,10^{-3}$}; \\
+      \draw[error small] plot[only marks] coordinates {(0,0)}; \node at (0.25,0) {${>}\,10^{-3}$}; \\
+      \draw[error medium] plot[only marks] coordinates {(0,0)}; \node at (0.25,0) {${>}\,10^{-2}$}; \\
+      \draw[error high] plot[only marks] coordinates {(0,0)}; \node at (0.25,0) {${>}\,10^{-1}$}; \\
+    };
+  \end{tikzpicture}%
+}
