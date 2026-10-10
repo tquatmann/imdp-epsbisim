@@ -15,7 +15,7 @@ chain M.
 pdflatex results.tex
 ```
 
-All steps together take about a minute.
+All steps together take a few minutes.
 
 ## Settings
 
@@ -26,9 +26,9 @@ All steps together take about a minute.
 
 ## What is done
 
-- **Models:** the 13 models that the full version of the paper shows results for (Table 1 and
+- **Models:** the 14 models that the full version of the paper shows results for (Table 1 and
   Appendix D), taken from the [repository of the authors](https://github.com/qiyitang71/approximate-quotienting).
-  Herman15 is not in that repository. Each model is perturbed with the `epsilon` of its table in the
+  Herman15 is not in that repository; it is built from `models/herman.15.prism`. Each model is perturbed with the `epsilon` of its table in the
   paper.
 - **Perturbation:** `ruffle --mode perturb-distribution` adds noise to each distribution such that
   its L1-distance to the real one is at most `epsilon` with probability 0.99 and `2 * epsilon`

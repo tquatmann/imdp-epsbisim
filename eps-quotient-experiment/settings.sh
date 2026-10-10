@@ -3,8 +3,9 @@
 # The benchmarks, each of the form <model>:<epsilon>: the models for which the full version of the paper
 # (arXiv:2110.00326) shows results (Table 1 and Appendix D), with the perturbation epsilon of M' given in the
 # header of the respective table. The tables of the Leader models have no epsilon, as the results are the same
-# for all of them; we take 0.001. Herman15 is missing as it is not in the repository of the authors.
-BENCHMARKS=${BENCHMARKS:-"Herman3:0.001 Herman5:0.0001 Herman7:0.001 Herman13:0.001 Leader5-5:0.001 Leader6-4:0.001
+# for all of them; we take 0.001. Herman15 is not in the repository of the authors; it is built from
+# models/herman.15.prism instead.
+BENCHMARKS=${BENCHMARKS:-"Herman3:0.001 Herman5:0.0001 Herman7:0.001 Herman13:0.001 Herman15:0.0001 Leader5-5:0.001 Leader6-4:0.001
   BRP16-3:0.01 BRP32-2:0.0001 BRP64-4:0.001 Crowds4-5:0.0001 Crowds6-5:0.001 EGL5-2:0.0001 EGL5-4:0.001"}
 
 DELTA=${DELTA:-0.01}                                     # probability that the perturbation of a distribution is larger

@@ -1,0 +1,6 @@
+Perturbing the distribution of each state-action pair such that the L1 distance is at most delta=0.0001 with probability 0.99.
+Maximum L1 distance between the real and the perturbed distribution over all choices: 0.0002.
+The L1 distance exceeds delta for 7 of 3515 choices.
+Hash of output transition probabilities: 0xfd44f9b6756cf0fc.
+Wrote resulting model to perturbed/Crowds4-5.umb.
+Runtime: 0.012s.

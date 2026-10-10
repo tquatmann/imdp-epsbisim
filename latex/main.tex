@@ -73,20 +73,22 @@
     \centering
     \makebox[\linewidth][s]{%
       \bisimulationtimeplot{0.2}{colepsc}\hfill
-      \wallclocktimeplot{\imdp-exact}{$\statesimdp$}\hfill
-      \wallclocktimeplot{\imdp-0.05}{$\statesimdp[0.05]$}}
+      \wallclockratioplot{\imdp-exact}{\statesimdp}\hfill
+      \wallclockratioplot{\imdp-0.05}{\statesimdp[0.05]}}
 
     \medskip
 
     \makebox[\linewidth][s]{%
-      \wallclocktimeplot{\imdp-0.1}{$\statesimdp[0.1]$}\hfill
-      \wallclocktimeplot{\imdp-0.2}{$\statesimdp[0.2]$}\hfill
+      \wallclockratioplot{\imdp-0.1}{\statesimdp[0.1]}\hfill
+      \wallclockratioplot{\imdp-0.2}{\statesimdp[0.2]}\hfill
       \makebox[1.35\scatterplotsize][c]{\raisebox{8mm}{\errorclasslegend}}}
     \caption{Runtimes in seconds for #2. Top left: size of the input model against the time for quotienting the IMDP,
     for exact bisimulation and for tolerance $\varepsilon = 0.2$.
-    Other plots: wallclock time of the whole run on the IMDP against the wallclock time when quotienting first,
-    for exact bisimulation and for tolerances $\varepsilon \in \{0.05, 0.1, 0.2\}$. The marks give the largest
-    absolute error over the properties of the benchmark; points marked \emph{TO} ran out of time or memory.}
+    Other plots: wallclock time of the whole run on the IMDP against the wallclock time when quotienting first
+    relative to it, for exact bisimulation and for tolerances $\varepsilon \in \{0.05, 0.1, 0.2\}$; a point
+    $(x,y)$ means that the run on the IMDP takes $x$ seconds and the run that quotients first takes $x \cdot y$
+    seconds. The marks give the largest absolute error over the properties of the benchmark; points marked
+    \emph{TO} ran out of time or memory.}
     \label{fig:wallclock-#1}
 \end{figure}
 \clearpage

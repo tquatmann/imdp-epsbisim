@@ -1,0 +1,40 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[table]{xcolor}
+\usepackage[Tol,keep-defaults]{colorblind}
+\colorlet{recovered}{T-Q-L6}
+\colorlet{notfiner}{T-Q-L8}
+\begin{document}
+\section*{Recovering the quotient of a perturbed Markov chain}
+A rough reproduction of the experiments of Kiefer and Tang (\emph{Approximate Bisimulation Minimisation}, FSTTCS 2021) with storm. $\mathcal{M}$ is a labelled Markov chain from their benchmark set and $\mathcal{M}'$ is a perturbed version of it, obtained as they do it for their large models: noise is added to each successor distribution such that its $L_1$-distance to the real distribution is at most $\epsilon$ with probability $0.99$ and $2\epsilon$ otherwise. We quotient $\mathcal{M}'$ with storm's bisimulation minimisation with tolerance $\epsilon_2$ and interval abstraction, and compare the resulting partition of the states with the one of the exact quotient $\mathcal{M}/{\sim}$ of the unperturbed chain. No color: the partition is finer. \colorbox{recovered}{Yellow}: the partition is the same, i.e.\ the quotient of the unperturbed chain is recovered. \colorbox{notfiner}{Pink}: the partition is coarser than or incomparable with the one of $\mathcal{M}/{\sim}$.
+
+\subsection*{All models}
+Number of states of the quotients for all models and tolerances $\epsilon_2$. The perturbation $\epsilon$ of each model is the one of the respective table of Kiefer and Tang.
+
+\begin{center}
+\begin{tabular}{lrr@{\quad}lr@{\quad}rrrrr}
+\toprule
+ & & & & & \multicolumn{5}{c}{states of the quotient of $\mathcal{M}'$ for $\epsilon_2 = {}$} \\
+model & $|\mathcal{M}|$ & $|\mathcal{M}/{\sim}|$ & $\epsilon$ & $|\mathcal{M}'/{\sim}|$ & 0.00001 & 0.0001 & 0.001 & 0.01 & 0.1 \\
+\midrule
+Herman3 & 8 & 2 & 0.001 & 3 & 3 & 3 & \cellcolor{recovered}2 & \cellcolor{recovered}2 & \cellcolor{recovered}2 \\
+Herman5 & 32 & 4 & 0.0001 & 23 & 23 & 22 & \cellcolor{recovered}4 & \cellcolor{recovered}4 & \cellcolor{recovered}4 \\
+Herman7 & 128 & 9 & 0.001 & 115 & 115 & 115 & 114 & \cellcolor{recovered}9 & \cellcolor{recovered}9 \\
+Herman13 & 8\,192 & 190 & 0.001 & 8\,167 & 8\,167 & 8\,167 & 8\,166 & 7\,608 & \cellcolor{recovered}190 \\
+Herman15 & 32\,768 & 612 & 0.0001 & 32\,739 & 32\,739 & 32\,738 & 31\,847 & \cellcolor{recovered}612 & \cellcolor{recovered}612 \\
+Leader5-5 & 12\,709 & 12 & 0.001 & \cellcolor{recovered}12 & \cellcolor{recovered}12 & \cellcolor{recovered}12 & \cellcolor{recovered}12 & \cellcolor{recovered}12 & \cellcolor{recovered}12 \\
+Leader6-4 & 20\,884 & 14 & 0.001 & \cellcolor{recovered}14 & \cellcolor{recovered}14 & \cellcolor{recovered}14 & \cellcolor{recovered}14 & \cellcolor{recovered}14 & \cellcolor{recovered}14 \\
+BRP16-3 & 886 & 440 & 0.01 & 671 & 671 & 663 & 611 & 457 & \cellcolor{recovered}440 \\
+BRP32-2 & 1\,349 & 647 & 0.0001 & 958 & 870 & 664 & \cellcolor{recovered}647 & \cellcolor{recovered}647 & \cellcolor{recovered}647 \\
+BRP64-4 & 4\,359 & 2\,185 & 0.001 & 3\,433 & 3\,349 & 3\,031 & 2\,288 & \cellcolor{recovered}2\,185 & \cellcolor{recovered}2\,185 \\
+Crowds4-5 & 3\,515 & 34 & 0.0001 & 1\,679 & 1\,659 & 1\,036 & \cellcolor{recovered}34 & \cellcolor{recovered}34 & \cellcolor{recovered}34 \\
+Crowds6-5 & 18\,817 & 50 & 0.001 & 9\,237 & 9\,235 & 9\,121 & 6\,078 & \cellcolor{recovered}50 & \cellcolor{recovered}50 \\
+EGL5-2 & 33\,790 & 472 & 0.0001 & 548 & 522 & 477 & \cellcolor{recovered}472 & \cellcolor{recovered}472 & \cellcolor{recovered}472 \\
+EGL5-4 & 74\,750 & 992 & 0.001 & 1\,068 & 1\,060 & 1\,041 & 997 & \cellcolor{recovered}992 & \cellcolor{recovered}992 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
