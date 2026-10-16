@@ -6,7 +6,9 @@ than or incomparable with the MDP quotient of the same benchmark. The result is 
 (unless it is already there). Then, a table with one row per benchmark is written as csv
 and as html, together with one html page per log file that the cells of the table link to.
 The file plotdata.csv contains the same table in a form that pgfplots can read and
-quantile-absdiff.csv contains the data for a quantile plot of the absolute differences (see latex/).
+quantile-absdiff.csv contains the data for a quantile plot of the absolute differences (see latex/);
+quantile-absdiff-P.csv and quantile-absdiff-R.csv restrict it to the benchmarks with a probability (P) and a
+reward (R) property, respectively.
 
 Only runs with a single repetition are supported.
 """
@@ -512,7 +514,7 @@ def write_plot_csv(path, columns, rows, benchmarks):
                             [error_class(raw_values, indices) for indices in error_columns.values()])
 
 
-def write_quantile_csv(path, columns, rows, prefix):
+def write_quantile_csv(path, columns, rows, prefix, benchmarks=None, property_class=None):
     """The data for a quantile plot of the columns whose csv header starts with the given prefix.
 
     Such a header is <prefix>-<kind>-<configuration>. The file has a column for each configuration with its
@@ -520,7 +522,10 @@ def write_quantile_csv(path, columns, rows, prefix):
     that there are i properties with a value of at most v. Properties without a value, e.g. because
     of a timeout, do not occur. Values below PLOT_MIN_VALUE (in particular 0) are
     replaced by PLOT_MIN_VALUE so that they can be shown on a logarithmic axis.
+    If property_class is given (P or R), only the benchmarks whose property has that class are considered.
     """
+    if property_class is not None:
+        rows = [row for row in rows if property_type(benchmarks[row[0].csv_values[0]])[:1] == property_class]
     headers = [header for _, _, headers in columns for header in headers]
     values = {}
     for index, header in enumerate(headers):
@@ -727,6 +732,9 @@ def main():
     write_csv(args.tabledir / "table.csv", columns, rows)
     write_plot_csv(args.tabledir / "plotdata.csv", columns, rows, benchmarks)
     write_quantile_csv(args.tabledir / "quantile-absdiff.csv", columns, rows, "absdiff")
+    for property_class in "PR":
+        write_quantile_csv(args.tabledir / f"quantile-absdiff-{property_class}.csv", columns, rows, "absdiff",
+                           benchmarks, property_class)
     pages = write_html(args.tabledir / "table.html", args.tabledir / "logpages", columns, rows)
     print(f"wrote {args.tabledir / 'table.csv'}, {args.tabledir / 'plotdata.csv'} and {args.tabledir / 'table.html'} "
           f"({len(rows)} benchmarks, {pages} log pages)")

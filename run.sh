@@ -20,4 +20,4 @@ python3 ../scripts/run.py inv.json
 python3 ../scripts/postprocess.py  --tabledir table logs out
 # copy over relevant data for plots
 cp table/plotdata.csv ../latex/results/
-cp table/quantile-absdiff.csv ../latex/results/
+cp table/quantile-absdiff.csv table/quantile-absdiff-P.csv table/quantile-absdiff-R.csv ../latex/results/

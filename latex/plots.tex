@@ -40,6 +40,12 @@
 %% this must match PLOT_TIMEOUT in postprocess.py. \plotmaxtime is the upper end of the time axes.
 \newcommand{\plottimeout}{20000}
 \newcommand{\plotmaxtime}{45000}
+%% The time limit of the runs in seconds.
+\newcommand{\plottimelimit}{7200}
+%% Position of runs that exceeded the time or memory limit on the axis of the runtime ratios, and the
+%% upper end of that axis.
+\newcommand{\plotratiotimeout}{60}
+\newcommand{\plotmaxratio}{150}
 %% Width of the quantile plot (without labels); chosen such that it fills a row together with a scatter plot.
 \newlength{\quantileplotwidth}
 \setlength{\quantileplotwidth}{0.545\linewidth}
@@ -400,7 +406,44 @@
   \end{tikzpicture}%
 }
 
-%% The legend for the marks of \wallclocktimeplot, as a box that can be placed next to the plots.
+%% A scatter plot of the wallclock time with a quotient of the IMDP relative to the wallclock time on the IMDP:
+%% a point (x,y) means that the run on the IMDP takes x seconds and the run that quotients first takes x*y seconds.
+%% Runs with a quotient that exceeded the time or memory limit are shown at TO on the y axis. If only the
+%% run on the IMDP exceeded the limit, the ratio is taken with respect to the time limit and is thus an upper bound.
+%% The marks tell how large the absolute error is; larger errors are drawn on top.
+%% #1: label of the quotient configuration in the csv columns  #2: the quotient (math)
+\newcommand{\wallclockratioplot}[2]{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      small plot,
+      width=\scatterplotsize,
+      height=\scatterplotsize,
+      xmin=0.1, xmax=\plotmaxtime, ymin=0.001, ymax=\plotmaxratio,
+      xmode=log, ymode=log,
+      xtick={0.1,1,10,100,1000},
+      xticklabels={$0.1$,,$10$,,$10^{3}$},
+      ytick={0.001,0.01,0.1,1,10},
+      yticklabels={,,$0.1$,$1$,$10$},  % wider labels do not fit
+      extra x ticks={\plottimeout}, extra x tick labels={TO},
+      extra x tick style={grid=major},
+      extra y ticks={\plotratiotimeout}, extra y tick labels={TO},
+      extra y tick style={grid=major},
+      xlabel={IMDP}, ylabel={$#2$ ratio},
+    ]
+      \addplot[no marks, forget plot] coordinates {(0.1,1) (\plotmaxtime,1)};
+      \foreach \class in {none,low,small,medium,high}{%
+        \edef\plotpoints{\noexpand\addplot[only marks, error \class, discard if not={error-class-#1}{\class}, forget plot]
+          table [col sep=comma, x=wallclock-time-\imdp,
+                 y expr={ifthenelse(\noexpand\thisrow{wallclock-time-#1} >= \plottimeout, \plotratiotimeout,
+                         max(\noexpand\thisrow{wallclock-time-#1} / min(\noexpand\thisrow{wallclock-time-\imdp}, \plottimelimit), 0.001))}]
+            {\noexpand\plotdata};}%
+        \plotpoints
+      }
+    \end{axis}
+  \end{tikzpicture}%
+}
+
+%% The legend for the marks of \wallclocktimeplot and \wallclockratioplot, as a box that can be placed next to the plots.
 \newcommand{\errorclasslegend}{%
   \begin{tikzpicture}[font=\tiny]
     \matrix[draw, inner sep=2pt, row sep=1pt, column sep=3pt, nodes={inner sep=0pt, anchor=west}] {
